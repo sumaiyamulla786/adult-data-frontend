@@ -3,6 +3,7 @@ import './App.css';
 import PieChart from './components/Pie'
 import { Bar } from 'react-chartjs-2'
 import TableData from './components/TableData'
+import Dropdown from './components/Dropdown'
 
 class App extends Component {
   state = {
@@ -11,18 +12,22 @@ class App extends Component {
     persons: [],
     nextPage: 2,
     previousPage: null,
+    totalPages: -1,
+    filters: {},
     personsLoading: true
   }
 
   onPageChange = (page) => {
     this.setState({ personsLoading: true })
-    fetch(`http://localhost:5000/persons?page=${page}`)
-      .then(response => response.json())
-      .then(result => {
-        this.setState({ persons: result.data, personsLoading: false, totalPages: result.totalPages, nextPage: result.nextPage, previousPage: result.previousPage })
-        console.log(this.state)
-      })
+    this.fetchPersons(`http://localhost:5000/persons?page=${page}`)
+  }
 
+  onChangeFilter = filter => {
+    const filters = { ...this.state.filters, ...filter }
+    this.setState({ filters })
+    setTimeout(() => {
+      this.fetchPersons('http://localhost:5000/persons?page=1')
+    }, 100)
   }
 
   componentDidMount() {
@@ -59,7 +64,18 @@ class App extends Component {
         this.setState({ genderData, relationData })
       })
 
-    fetch(`http://localhost:5000/persons?page=1`)
+    this.fetchPersons(`http://localhost:5000/persons?page=1`)
+  }
+
+  fetchPersons = url => {
+    Object.keys(this.state.filters)
+      .forEach(key => {
+        const value = this.state.filters[key]
+        if (value !== 'All') {
+          url += `&${key.toLowerCase()}=${value}`
+        }
+      })
+    fetch(url)
       .then(response => response.json())
       .then(result => {
         this.setState({ persons: result.data, personsLoading: false, totalPages: result.totalPages, nextPage: result.nextPage, previousPage: result.previousPage })
@@ -90,11 +106,27 @@ class App extends Component {
               >Previous</button>
             </div>
             <div className="col">
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 disabled={this.state.nextPage === -1}
                 onClick={() => this.onPageChange(this.state.nextPage)}
               >Next</button>
+            </div>
+          </div>
+          <div className="row graph">
+            <div className="col">
+              <h4>
+                Page No: {this.state.nextPage === -1 ? this.state.totalPages : this.state.nextPage - 1}
+              </h4> 
+            </div>
+            <div className="col"> 
+              <Dropdown filterName={"Sex"} filterValues={["Male", "Female"]} onChangeFilter={this.onChangeFilter} />
+            </div>
+            <div className="col"> 
+              <Dropdown filterName={"Race"} filterValues={[ "White", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other", "Black"]} onChangeFilter={this.onChangeFilter} />
+            </div>
+            <div className="col"> 
+              <Dropdown filterName={"Relationship"} filterValues={['Wife', 'Own-child', 'Husband', 'Not-in-family', 'Other-relative', 'Unmarried']} onChangeFilter={this.onChangeFilter} />
             </div>
           </div>
         </div>
@@ -137,8 +169,8 @@ class App extends Component {
               >Previous</button>
             </div>
             <div className="col">
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 disabled={this.state.nextPage === -1}
                 onClick={() => this.onPageChange(this.state.nextPage)}
               >Next</button>
