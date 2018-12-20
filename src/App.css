@@ -22,6 +22,22 @@
   color: #61dafb;
 }
 
+.titleBar {
+  width: auto;
+  height: 5em;
+  text-align: center;
+  color: white;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.graph {
+  margin-top: 50px;
+  margin-bottom: 20px;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
