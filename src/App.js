@@ -17,16 +17,60 @@ class App extends Component {
     personsLoading: true
   }
 
-  onPageChange = (page) => {
-    this.setState({ personsLoading: true })
-    this.fetchPersons(`http://localhost:5000/persons?page=${page}`)
+  onPreviousPage = (page) => {
+    const { persons, totalPages, nextPage, previousPage } = this.state
+    const currentPage = {
+      totalPages,
+      nextPage,
+      previousPage,
+      data: persons
+    }
+    localStorage.setItem('NEXT_PAGE', JSON.stringify(currentPage))
+    const cachedPreviousPage = JSON.parse(localStorage.getItem('PREVIOUS_PAGE'))
+    if (cachedPreviousPage) {
+      this.updateState(cachedPreviousPage)
+      setTimeout(() => {
+        if (this.state.previousPage !== -1) {
+          this.cachePage('PREVIOUS_PAGE', this.state.previousPage)
+        }
+      }, 100)
+    } else {
+      this.setState({ personsLoading: true })
+      this.fetchPersons(`http://localhost:5000/persons?page=${page}`)
+    }
+  }
+
+  onNextPage = (page) => {
+    const { persons, totalPages, nextPage, previousPage } = this.state
+    const currentPage = {
+      totalPages,
+      nextPage,
+      previousPage,
+      data: persons
+    }
+    localStorage.setItem('PREVIOUS_PAGE', JSON.stringify(currentPage))
+    const cachedNextPage = JSON.parse(localStorage.getItem('NEXT_PAGE'))
+    if (cachedNextPage) {
+      this.updateState(cachedNextPage)
+      setTimeout(() => {
+        if (this.state.nextPage !== -1) {
+          this.cachePage('NEXT_PAGE', this.state.nextPage)
+        }
+      }, 100)
+    } else {
+      this.setState({ personsLoading: true })
+      this.fetchPersons(`http://localhost:5000/persons?page=${page}`)
+    }
   }
 
   onChangeFilter = filter => {
+    localStorage.removeItem('NEXT_PAGE')
+    localStorage.removeItem('PREVIOUS_PAGE')
     const filters = { ...this.state.filters, ...filter }
     this.setState({ filters })
     setTimeout(() => {
       this.fetchPersons('http://localhost:5000/persons?page=1')
+      this.cachePage('NEXT_PAGE', 2)
     }, 100)
   }
 
@@ -65,20 +109,43 @@ class App extends Component {
       })
 
     this.fetchPersons(`http://localhost:5000/persons?page=1`)
+    this.cachePage('NEXT_PAGE', 2)
   }
 
   fetchPersons = url => {
+    const filterUrl = this.addFilters(url)
+    fetch(filterUrl)
+      .then(response => response.json())
+      .then(this.updateState)
+  }
+
+  addFilters = url => {
+    let newUrl = url
     Object.keys(this.state.filters)
       .forEach(key => {
         const value = this.state.filters[key]
         if (value !== 'All') {
-          url += `&${key.toLowerCase()}=${value}`
+          newUrl += `&${key.toLowerCase()}=${value}`
         }
       })
-    fetch(url)
+    return newUrl
+  }
+
+  updateState = result => {
+    this.setState({ persons: result.data, personsLoading: false, totalPages: result.totalPages, nextPage: result.nextPage, previousPage: result.previousPage })
+  }
+
+  cachePage = (pageType, page) => {
+    const url = `http://localhost:5000/persons?page=${page}`
+    const filterUrl = this.addFilters(url)
+    fetch(filterUrl)
       .then(response => response.json())
       .then(result => {
-        this.setState({ persons: result.data, personsLoading: false, totalPages: result.totalPages, nextPage: result.nextPage, previousPage: result.previousPage })
+        if (pageType === 'NEXT_PAGE') {
+          localStorage.setItem('NEXT_PAGE', JSON.stringify(result))
+        } else {
+          localStorage.setItem('PREVIOUS_PAGE', JSON.stringify(result))
+        }
       })
   }
 
@@ -102,14 +169,14 @@ class App extends Component {
               <button
                 className="btn btn-primary"
                 disabled={this.state.previousPage === -1}
-                onClick={() => this.onPageChange(this.state.previousPage)}
+                onClick={() => this.onPreviousPage(this.state.previousPage)}
               >Previous</button>
             </div>
             <div className="col">
               <button
                 className="btn btn-primary"
                 disabled={this.state.nextPage === -1}
-                onClick={() => this.onPageChange(this.state.nextPage)}
+                onClick={() => this.onNextPage(this.state.nextPage)}
               >Next</button>
             </div>
           </div>
@@ -165,14 +232,14 @@ class App extends Component {
               <button
                 className="btn btn-primary"
                 disabled={this.state.previousPage === -1}
-                onClick={() => this.onPageChange(this.state.previousPage)}
+                onClick={() => this.onPreviousPage(this.state.previousPage)}
               >Previous</button>
             </div>
             <div className="col">
               <button
                 className="btn btn-primary"
                 disabled={this.state.nextPage === -1}
-                onClick={() => this.onPageChange(this.state.nextPage)}
+                onClick={() => this.onNextPage(this.state.nextPage)}
               >Next</button>
             </div>
           </div>
