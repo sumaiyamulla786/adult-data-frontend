@@ -49,6 +49,19 @@ class App extends Component {
   }
 
   /**
+   * @param response response from an api call
+   * 
+   * Handles scenarios where response contains error response codes other than 200
+   */
+  handleErrorResponse = response => {
+    if (response.status !== 200) {
+      throw "server error"
+    } else {
+      return response.json()
+    }
+  }
+
+  /**
    * @param url url to fetch data from
    * 
    * This function fetches the fitered as well as normal persons data using the url and then updates the related state values in the component using the updatePersonState function
@@ -56,7 +69,7 @@ class App extends Component {
   fetchPersons = url => {
     const filterUrl = this.addFilters(url)
     fetch(filterUrl)
-      .then(response => response.json())
+      .then(this.handleErrorResponse)
       .then(this.updatePersonState)
       .catch(() => {
         const fetchPersonsFailed = true
@@ -74,7 +87,7 @@ class App extends Component {
     const url = `${apiUrl}/persons?page=${page}`
     const filterUrl = this.addFilters(url)
     fetch(filterUrl)
-      .then(response => response.json())
+      .then(this.handleErrorResponse)
       .then(result => {
         if (result.data && result.data.length) {
           if (pageType === STORAGE_KEYS.NEXT_PAGE) {
@@ -84,6 +97,7 @@ class App extends Component {
           }
         }
       })
+      .catch(() => { })
   }
 
   /**
@@ -116,11 +130,11 @@ class App extends Component {
     }
   }
 
-   /**
-   * @param page page number of previous page
-   * 
-   * This function caches the current page as previous page , pulls out the next page from cache or fetches and caches it if not present, then updates the state with next page's data.This function is passed as callback to NavigationButtons component
-   */
+  /**
+  * @param page page number of previous page
+  * 
+  * This function caches the current page as previous page , pulls out the next page from cache or fetches and caches it if not present, then updates the state with next page's data.This function is passed as callback to NavigationButtons component
+  */
   onNextPage = (page) => {
     const { persons, totalPages, nextPage, previousPage } = this.state
     const currentPage = {
@@ -163,41 +177,48 @@ class App extends Component {
   }
 
   /**
+   * @param result resulting json from getCount api call
+   * 
+   * takes the response from getCount api and sets the genderData and relationData in state
+   */
+  setCountState = result => {
+    const genderData = {
+      labels: [
+        'Male',
+        'Female'
+      ],
+      datasets: [{
+        data: [result.totalMales, result.totalFemales],
+        backgroundColor: [
+          '#FF6384',
+          '#36A2EB'
+        ]
+      }]
+    }
+    const relationData = {
+      labels: ['Wife', 'Own-child', 'Husband', 'Not-in-family', 'Other-relative', 'Unmarried'],
+      datasets: [
+        {
+          label: 'Relationship Distribution',
+          backgroundColor: 'rgba(255,99,132,0.2)',
+          borderColor: 'rgba(255,99,132,1)',
+          borderWidth: 1,
+          hoverBackgroundColor: 'rgba(255,99,132,0.4)',
+          hoverBorderColor: 'rgba(255,99,132,1)',
+          data: [result.totalWifes, result.totalOwnChilds, result.totalHusbands, result.totalNotInFamilys, result.totalOtherRelatives, result.totalUnmarrieds]
+        }
+      ]
+    }
+    this.setState({ genderData, relationData })
+  }
+
+  /**
    * fetching the intial data from api for populating the bar graph and pie chart , as well as to populate the persons table, as well as cache the next page using cachePage function
    */
   componentDidMount() {
     fetch(`${apiUrl}/getCount`)
-      .then(response => response.json())
-      .then(result => {
-        const genderData = {
-          labels: [
-            'Male',
-            'Female'
-          ],
-          datasets: [{
-            data: [result.totalMales, result.totalFemales],
-            backgroundColor: [
-              '#FF6384',
-              '#36A2EB'
-            ]
-          }]
-        }
-        const relationData = {
-          labels: ['Wife', 'Own-child', 'Husband', 'Not-in-family', 'Other-relative', 'Unmarried'],
-          datasets: [
-            {
-              label: 'Relationship Distribution',
-              backgroundColor: 'rgba(255,99,132,0.2)',
-              borderColor: 'rgba(255,99,132,1)',
-              borderWidth: 1,
-              hoverBackgroundColor: 'rgba(255,99,132,0.4)',
-              hoverBorderColor: 'rgba(255,99,132,1)',
-              data: [result.totalWifes, result.totalOwnChilds, result.totalHusbands, result.totalNotInFamilys, result.totalOtherRelatives, result.totalUnmarrieds]
-            }
-          ]
-        }
-        this.setState({ genderData, relationData })
-      })
+      .then(this.handleErrorResponse)
+      .then(this.setCountState)
       .catch(() => {
         const fetchCountFailed = true
         this.setState({ fetchCountFailed })
