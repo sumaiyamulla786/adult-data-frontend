@@ -5,6 +5,8 @@ import { Bar } from 'react-chartjs-2'
 import Table from '../../components/Table'
 import NavigationButtons from '../../components/NavigationButtons'
 import FilterControls from '../../components/FilterControls'
+import STORAGE_KEYS from '../../helper/storage.constants'
+import { apiUrl } from '../../config'
 
 class App extends Component {
   state = {
@@ -28,18 +30,18 @@ class App extends Component {
       previousPage,
       data: persons
     }
-    localStorage.setItem('NEXT_PAGE', JSON.stringify(currentPage))
-    const cachedPreviousPage = JSON.parse(localStorage.getItem('PREVIOUS_PAGE'))
+    localStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(currentPage))
+    const cachedPreviousPage = JSON.parse(localStorage.getItem(STORAGE_KEYS.PREVIOUS_PAGE))
     if (cachedPreviousPage) {
       this.updateState(cachedPreviousPage)
       setTimeout(() => {
         if (this.state.previousPage !== -1) {
-          this.cachePage('PREVIOUS_PAGE', this.state.previousPage)
+          this.cachePage(STORAGE_KEYS.PREVIOUS_PAGE, this.state.previousPage)
         }
       }, 100)
     } else {
       this.setState({ personsLoading: true })
-      this.fetchPersons(`http://localhost:5000/persons?page=${page}`)
+      this.fetchPersons(`${apiUrl}/persons?page=${page}`)
     }
   }
 
@@ -51,34 +53,34 @@ class App extends Component {
       previousPage,
       data: persons
     }
-    localStorage.setItem('PREVIOUS_PAGE', JSON.stringify(currentPage))
-    const cachedNextPage = JSON.parse(localStorage.getItem('NEXT_PAGE'))
+    localStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(currentPage))
+    const cachedNextPage = JSON.parse(localStorage.getItem(STORAGE_KEYS.NEXT_PAGE))
     if (cachedNextPage) {
       this.updateState(cachedNextPage)
       setTimeout(() => {
         if (this.state.nextPage !== -1) {
-          this.cachePage('NEXT_PAGE', this.state.nextPage)
+          this.cachePage(STORAGE_KEYS.NEXT_PAGE, this.state.nextPage)
         }
       }, 100)
     } else {
       this.setState({ personsLoading: true })
-      this.fetchPersons(`http://localhost:5000/persons?page=${page}`)
+      this.fetchPersons(`${apiUrl}/persons?page=${page}`)
     }
   }
 
   onChangeFilter = filter => {
-    localStorage.removeItem('NEXT_PAGE')
-    localStorage.removeItem('PREVIOUS_PAGE')
+    localStorage.removeItem(STORAGE_KEYS.NEXT_PAGE)
+    localStorage.removeItem(STORAGE_KEYS.PREVIOUS_PAGE)
     const filters = { ...this.state.filters, ...filter }
     this.setState({ filters })
     setTimeout(() => {
-      this.fetchPersons('http://localhost:5000/persons?page=1')
-      this.cachePage('NEXT_PAGE', 2)
+      this.fetchPersons(`${apiUrl}/persons?page=1`)
+      this.cachePage(STORAGE_KEYS.NEXT_PAGE, 2)
     }, 100)
   }
 
   componentDidMount() {
-    fetch('http://localhost:5000/getCount')
+    fetch(`${apiUrl}/getCount`)
       .then(response => response.json())
       .then(result => {
         const genderData = {
@@ -115,8 +117,8 @@ class App extends Component {
         this.setState({ fetchCountFailed })
       })
 
-    this.fetchPersons(`http://localhost:5000/persons?page=1`)
-    this.cachePage('NEXT_PAGE', 2)
+    this.fetchPersons(`${apiUrl}/persons?page=1`)
+    this.cachePage(STORAGE_KEYS.NEXT_PAGE, 2)
   }
 
   fetchPersons = url => {
@@ -147,15 +149,15 @@ class App extends Component {
   }
 
   cachePage = (pageType, page) => {
-    const url = `http://localhost:5000/persons?page=${page}`
+    const url = `${apiUrl}/persons?page=${page}`
     const filterUrl = this.addFilters(url)
     fetch(filterUrl)
       .then(response => response.json())
       .then(result => {
-        if (pageType === 'NEXT_PAGE') {
-          localStorage.setItem('NEXT_PAGE', JSON.stringify(result))
+        if (pageType === STORAGE_KEYS.NEXT_PAGE) {
+          localStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(result))
         } else {
-          localStorage.setItem('PREVIOUS_PAGE', JSON.stringify(result))
+          localStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(result))
         }
       })
   }
