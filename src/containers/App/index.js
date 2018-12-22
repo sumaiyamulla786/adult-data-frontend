@@ -22,6 +22,75 @@ class App extends Component {
     personsLoading: true
   }
 
+  /**
+   * @param url initial url to add filter query string to
+   * 
+   * This function takes a url and then scans the filter object in state , append each key whose value is not equal to 'All' as filter to the query string, then returns the updated url.
+   */
+  addFilters = url => {
+    let newUrl = url
+    Object.keys(this.state.filters)
+      .forEach(key => {
+        const value = this.state.filters[key]
+        if (value !== 'All') {
+          newUrl += `&${key.toLowerCase()}=${value}`
+        }
+      })
+    return newUrl
+  }
+
+  /**
+   * @param result the object containing values to set the state with
+   * 
+   * This function updates the state values relating to the persons data and pagination
+   */
+  updatePersonState = result => {
+    this.setState({ persons: result.data, personsLoading: false, totalPages: result.totalPages, nextPage: result.nextPage, previousPage: result.previousPage })
+  }
+
+  /**
+   * @param url url to fetch data from
+   * 
+   * This function fetches the fitered as well as normal persons data using the url and then updates the related state values in the component using the updatePersonState function
+   */
+  fetchPersons = url => {
+    const filterUrl = this.addFilters(url)
+    fetch(filterUrl)
+      .then(response => response.json())
+      .then(this.updatePersonState)
+      .catch(() => {
+        const fetchPersonsFailed = true
+        this.setState({ fetchPersonsFailed })
+      })
+  }
+
+  /**
+   * @param pageType type of page to cache next or previous
+   * @param page number of the page to fetch and cache
+   * 
+   * This function fetches the next or previous page depending on params and then caches it to improve performance of the app as well as improve user experience
+   */
+  cachePage = (pageType, page) => {
+    const url = `${apiUrl}/persons?page=${page}`
+    const filterUrl = this.addFilters(url)
+    fetch(filterUrl)
+      .then(response => response.json())
+      .then(result => {
+        if (result.data && result.data.length) {
+          if (pageType === STORAGE_KEYS.NEXT_PAGE) {
+            sessionStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(result))
+          } else {
+            sessionStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(result))
+          }
+        }
+      })
+  }
+
+  /**
+   * @param page page number of previous page
+   * 
+   * This function caches the current page as next page , pulls out the previous page from cache or fetches and caches it if not present, then updates the state with previous page's data.This function is passed as callback to NavigationButtons component
+   */
   onPreviousPage = (page) => {
     const { persons, totalPages, nextPage, previousPage } = this.state
     const currentPage = {
@@ -33,7 +102,7 @@ class App extends Component {
     sessionStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(currentPage))
     const cachedPreviousPage = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.PREVIOUS_PAGE))
     if (cachedPreviousPage) {
-      this.updateState(cachedPreviousPage)
+      this.updatePersonState(cachedPreviousPage)
       setTimeout(() => {
         if (this.state.previousPage !== -1) {
           this.cachePage(STORAGE_KEYS.PREVIOUS_PAGE, this.state.previousPage)
@@ -47,6 +116,11 @@ class App extends Component {
     }
   }
 
+   /**
+   * @param page page number of previous page
+   * 
+   * This function caches the current page as previous page , pulls out the next page from cache or fetches and caches it if not present, then updates the state with next page's data.This function is passed as callback to NavigationButtons component
+   */
   onNextPage = (page) => {
     const { persons, totalPages, nextPage, previousPage } = this.state
     const currentPage = {
@@ -58,7 +132,7 @@ class App extends Component {
     sessionStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(currentPage))
     const cachedNextPage = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.NEXT_PAGE))
     if (cachedNextPage) {
-      this.updateState(cachedNextPage)
+      this.updatePersonState(cachedNextPage)
       setTimeout(() => {
         if (this.state.nextPage !== -1) {
           this.cachePage(STORAGE_KEYS.NEXT_PAGE, this.state.nextPage)
@@ -72,6 +146,11 @@ class App extends Component {
     }
   }
 
+  /**
+   * @param filter filter data selected by user in FilterControls component
+   * 
+   * This function invalidates the cached data, and updates the filter object in the state, it then refectches the person data using fetchPersons function and caches the nextPage with this filter using the cachePage function
+   */
   onChangeFilter = filter => {
     sessionStorage.removeItem(STORAGE_KEYS.NEXT_PAGE)
     sessionStorage.removeItem(STORAGE_KEYS.PREVIOUS_PAGE)
@@ -83,6 +162,9 @@ class App extends Component {
     }, 100)
   }
 
+  /**
+   * fetching the intial data from api for populating the bar graph and pie chart , as well as to populate the persons table, as well as cache the next page using cachePage function
+   */
   componentDidMount() {
     fetch(`${apiUrl}/getCount`)
       .then(response => response.json())
@@ -123,49 +205,6 @@ class App extends Component {
 
     this.fetchPersons(`${apiUrl}/persons?page=1`)
     this.cachePage(STORAGE_KEYS.NEXT_PAGE, 2)
-  }
-
-  fetchPersons = url => {
-    const filterUrl = this.addFilters(url)
-    fetch(filterUrl)
-      .then(response => response.json())
-      .then(this.updateState)
-      .catch(() => {
-        const fetchPersonsFailed = true
-        this.setState({ fetchPersonsFailed })
-      })
-  }
-
-  addFilters = url => {
-    let newUrl = url
-    Object.keys(this.state.filters)
-      .forEach(key => {
-        const value = this.state.filters[key]
-        if (value !== 'All') {
-          newUrl += `&${key.toLowerCase()}=${value}`
-        }
-      })
-    return newUrl
-  }
-
-  updateState = result => {
-    this.setState({ persons: result.data, personsLoading: false, totalPages: result.totalPages, nextPage: result.nextPage, previousPage: result.previousPage })
-  }
-
-  cachePage = (pageType, page) => {
-    const url = `${apiUrl}/persons?page=${page}`
-    const filterUrl = this.addFilters(url)
-    fetch(filterUrl)
-      .then(response => response.json())
-      .then(result => {
-        if (result.data && result.data.length) {
-          if (pageType === STORAGE_KEYS.NEXT_PAGE) {
-            sessionStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(result))
-          } else {
-            sessionStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(result))
-          }
-        }
-      })
   }
 
   render() {

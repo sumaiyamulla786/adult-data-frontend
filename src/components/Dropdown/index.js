@@ -1,3 +1,11 @@
+/**
+ * @param filterName name of the filter, used as label for select
+ * @param filterValues array of filter values used as options for select
+ * @param onChangeFilter callback function called when there is change in filter
+ * @param personsLoading status of the persons api call , if completed or not.Used for making the select disabled when request till fetch request is not completed
+ * 
+ * This is a functional componet which returns a selct field with label and options to be used as filter dropdown in FilterControls
+ */
 import React from 'react'
 
 const Dropdown = ({ filterName, filterValues, onChangeFilter, personsLoading }) => {

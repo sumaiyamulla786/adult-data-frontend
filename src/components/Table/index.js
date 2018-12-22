@@ -1,3 +1,10 @@
+/**
+ * @param personsLoading status of person api call, used to hide the table when the api call is not finished
+ * @param persons array of adult data returned from backend to be displayed as table data
+ * @param fetchPersonsFailed flag which represents that the persons api call is failed , used to display error message in case of failure
+ * 
+ * This component is wrapper for HTML table , this is used for generating the table headers as well as populating the adult data as table rows using the TableData component, it returns the complete table node with adult data
+ */
 import React from 'react'
 import TableData from '../TableData'
 

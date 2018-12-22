@@ -1,3 +1,11 @@
+/**
+ * @param previousPage previous page of persons in the server
+ * @param nextPage next page of persons in the server
+ * @param onPreviousPage callback function to be called when previous button is clicked
+ * @param onNextPage callback function to be called when previous button is clicked
+ * 
+ * This component contains the buttons for fetching the next and previous pages for adult data, as well as displays the number for currently displayed page
+ */
 import React from 'react'
 
 const NavigationButtons = ({ previousPage, nextPage, onPreviousPage, onNextPage, totalPages }) => (
@@ -11,7 +19,7 @@ const NavigationButtons = ({ previousPage, nextPage, onPreviousPage, onNextPage,
         </div>
         <div className="col text-center">
             <h4>
-                {totalPages === -1 ? '' : (nextPage === -1 ? totalPages : nextPage - 1)}
+                {totalPages === -1 ? '' : (nextPage === -1 ? totalPages : nextPage - 1)} / {totalPages}
             </h4>
         </div>
         <div className="col">

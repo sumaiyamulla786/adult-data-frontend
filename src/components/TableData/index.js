@@ -1,3 +1,8 @@
+/**
+ * @param person a single document from the adult data collection to be displayed as a table row
+ * 
+ * This component populates a table row with each key of person object as table data and returns it to the Table component
+ */
 import React from 'react'
 
 const TableData = ({ person }) => {
