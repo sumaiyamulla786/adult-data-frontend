@@ -5,6 +5,7 @@ const Table = ({ personsLoading, persons, fetchPersonsFailed }) => (
     <div className="col">
         {
             !fetchPersonsFailed &&
+            !personsLoading &&
             <table className="table">
                 <thead className="thead-dark">
                     <tr>
@@ -29,6 +30,7 @@ const Table = ({ personsLoading, persons, fetchPersonsFailed }) => (
                 </tbody>
             </table>
         }
+        { personsLoading && !fetchPersonsFailed && <h4 className="loading">Loading...</h4> }
         { fetchPersonsFailed && <h3 className="error">Fetching Persons Data Failed, Please refresh and try again</h3> }
     </div>
 )

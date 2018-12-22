@@ -13,8 +13,8 @@ class App extends Component {
     genderData: {},
     relationData: {},
     persons: [],
-    nextPage: 2,
-    previousPage: null,
+    nextPage: -1,
+    previousPage: -1,
     totalPages: -1,
     filters: {},
     fetchCountFailed: false,
@@ -30,8 +30,8 @@ class App extends Component {
       previousPage,
       data: persons
     }
-    localStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(currentPage))
-    const cachedPreviousPage = JSON.parse(localStorage.getItem(STORAGE_KEYS.PREVIOUS_PAGE))
+    sessionStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(currentPage))
+    const cachedPreviousPage = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.PREVIOUS_PAGE))
     if (cachedPreviousPage) {
       this.updateState(cachedPreviousPage)
       setTimeout(() => {
@@ -40,8 +40,10 @@ class App extends Component {
         }
       }, 100)
     } else {
-      this.setState({ personsLoading: true })
       this.fetchPersons(`${apiUrl}/persons?page=${page}`)
+      if (page > 1) {
+        this.cachePage(STORAGE_KEYS.PREVIOUS_PAGE, (page - 1))
+      }
     }
   }
 
@@ -53,24 +55,26 @@ class App extends Component {
       previousPage,
       data: persons
     }
-    localStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(currentPage))
-    const cachedNextPage = JSON.parse(localStorage.getItem(STORAGE_KEYS.NEXT_PAGE))
+    sessionStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(currentPage))
+    const cachedNextPage = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.NEXT_PAGE))
     if (cachedNextPage) {
       this.updateState(cachedNextPage)
       setTimeout(() => {
         if (this.state.nextPage !== -1) {
           this.cachePage(STORAGE_KEYS.NEXT_PAGE, this.state.nextPage)
         }
-      }, 100)
+      }, 10)
     } else {
-      this.setState({ personsLoading: true })
       this.fetchPersons(`${apiUrl}/persons?page=${page}`)
+      if (page < this.state.totalPages) {
+        this.cachePage(STORAGE_KEYS.NEXT_PAGE, (page + 1))
+      }
     }
   }
 
   onChangeFilter = filter => {
-    localStorage.removeItem(STORAGE_KEYS.NEXT_PAGE)
-    localStorage.removeItem(STORAGE_KEYS.PREVIOUS_PAGE)
+    sessionStorage.removeItem(STORAGE_KEYS.NEXT_PAGE)
+    sessionStorage.removeItem(STORAGE_KEYS.PREVIOUS_PAGE)
     const filters = { ...this.state.filters, ...filter }
     this.setState({ filters })
     setTimeout(() => {
@@ -154,10 +158,12 @@ class App extends Component {
     fetch(filterUrl)
       .then(response => response.json())
       .then(result => {
-        if (pageType === STORAGE_KEYS.NEXT_PAGE) {
-          localStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(result))
-        } else {
-          localStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(result))
+        if (result.data && result.data.length) {
+          if (pageType === STORAGE_KEYS.NEXT_PAGE) {
+            sessionStorage.setItem(STORAGE_KEYS.NEXT_PAGE, JSON.stringify(result))
+          } else {
+            sessionStorage.setItem(STORAGE_KEYS.PREVIOUS_PAGE, JSON.stringify(result))
+          }
         }
       })
   }
@@ -185,14 +191,14 @@ class App extends Component {
               previousPage={this.state.previousPage}
               onNextPage={this.onNextPage}
               onPreviousPage={this.onPreviousPage}
+              totalPages={this.state.totalPages}
             />
           }
           {
             !this.state.fetchPersonsFailed &&
             <FilterControls
-              nextPage={this.state.nextPage}
-              totalPages={this.state.totalPages}
               onChangeFilter={this.onChangeFilter}
+              personsLoading={this.state.personsLoading}
             />
           }
         </div>
@@ -208,11 +214,14 @@ class App extends Component {
         <div className="container">
           {
             !this.state.fetchPersonsFailed &&
+            !this.state.personsLoading &&
+            this.state.persons.length &&
             <NavigationButtons
               nextPage={this.state.nextPage}
               previousPage={this.state.previousPage}
               onNextPage={this.onNextPage}
               onPreviousPage={this.onPreviousPage}
+              totalPages={this.state.totalPages}
             />
           }
         </div>
