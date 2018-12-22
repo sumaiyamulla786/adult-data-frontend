@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import './App.css';
-import PieChart from './components/Pie'
+import PieChart from '../../components/Pie'
 import { Bar } from 'react-chartjs-2'
-import TableData from './components/TableData'
-import Dropdown from './components/Dropdown'
+import Table from '../../components/Table'
+import NavigationButtons from '../../components/NavigationButtons'
+import FilterControls from '../../components/FilterControls'
 
 class App extends Component {
   state = {
@@ -14,6 +15,8 @@ class App extends Component {
     previousPage: null,
     totalPages: -1,
     filters: {},
+    fetchCountFailed: false,
+    fetchPersonsFailed: false,
     personsLoading: true
   }
 
@@ -107,6 +110,10 @@ class App extends Component {
         }
         this.setState({ genderData, relationData })
       })
+      .catch(() => {
+        const fetchCountFailed = true
+        this.setState({ fetchCountFailed })
+      })
 
     this.fetchPersons(`http://localhost:5000/persons?page=1`)
     this.cachePage('NEXT_PAGE', 2)
@@ -117,6 +124,10 @@ class App extends Component {
     fetch(filterUrl)
       .then(response => response.json())
       .then(this.updateState)
+      .catch(() => {
+        const fetchPersonsFailed = true
+        this.setState({ fetchPersonsFailed })
+      })
   }
 
   addFilters = url => {
@@ -156,93 +167,52 @@ class App extends Component {
         <div className="container">
           <div className="row graph">
             <div className="col">
-              <PieChart data={this.state.genderData} />
+              {!this.state.fetchCountFailed && <PieChart data={this.state.genderData} />}
+              {this.state.fetchCountFailed && <h3 className="error">Something went wrong with fetching chart data,please refresh and try again</h3>}
             </div>
           </div>
           <div className="row graph">
             <div className="col">
-              <Bar data={this.state.relationData} />
+              {!this.state.fetchCountFailed && <Bar data={this.state.relationData} />}
             </div>
           </div>
-          <div className="row graph">
-            <div className="col">
-              <button
-                className="btn btn-primary"
-                disabled={this.state.previousPage === -1}
-                onClick={() => this.onPreviousPage(this.state.previousPage)}
-              >Previous</button>
-            </div>
-            <div className="col">
-              <button
-                className="btn btn-primary"
-                disabled={this.state.nextPage === -1}
-                onClick={() => this.onNextPage(this.state.nextPage)}
-              >Next</button>
-            </div>
-          </div>
-          <div className="row graph">
-            <div className="col">
-              <h4>
-                Page No: {this.state.nextPage === -1 ? this.state.totalPages : this.state.nextPage - 1}
-              </h4> 
-            </div>
-            <div className="col"> 
-              <Dropdown filterName={"Sex"} filterValues={["Male", "Female"]} onChangeFilter={this.onChangeFilter} />
-            </div>
-            <div className="col"> 
-              <Dropdown filterName={"Race"} filterValues={[ "White", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other", "Black"]} onChangeFilter={this.onChangeFilter} />
-            </div>
-            <div className="col"> 
-              <Dropdown filterName={"Relationship"} filterValues={['Wife', 'Own-child', 'Husband', 'Not-in-family', 'Other-relative', 'Unmarried']} onChangeFilter={this.onChangeFilter} />
-            </div>
-          </div>
+          {
+            !this.state.fetchPersonsFailed &&
+            <NavigationButtons
+              nextPage={this.state.nextPage}
+              previousPage={this.state.previousPage}
+              onNextPage={this.onNextPage}
+              onPreviousPage={this.onPreviousPage}
+            />
+          }
+          {
+            !this.state.fetchPersonsFailed &&
+            <FilterControls
+              nextPage={this.state.nextPage}
+              totalPages={this.state.totalPages}
+              onChangeFilter={this.onChangeFilter}
+            />
+          }
         </div>
         <div className="container-fluid">
           <div className="row graph">
-            <div className="col">
-              <table className="table">
-                <thead className="thead-dark">
-                  <tr>
-                    <th scope="col">Age</th>
-                    <th scope="col">Workclass</th>
-                    <th scope="col">Fnlwgt</th>
-                    <th scope="col">Education</th>
-                    <th scope="col">Education Num</th>
-                    <th scope="col">Marital Status</th>
-                    <th scope="col">Occupation</th>
-                    <th scope="col">Relationship</th>
-                    <th scope="col">Race</th>
-                    <th scope="col">Sex</th>
-                    <th scope="col">Capital Gain</th>
-                    <th scope="col">Capital Loss</th>
-                    <th scope="col">Hours Per Week</th>
-                    <th scope="col">Native Country</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!this.state.personsLoading && this.state.persons.map(person => (<TableData person={person} key={person._id["$oid"]} />))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              personsLoading={this.state.personsLoading}
+              persons={this.state.persons}
+              fetchPersonsFailed={this.state.fetchPersonsFailed}
+            />
           </div>
         </div>
         <div className="container">
-          <div className="row graph">
-            <div className="col">
-              <button
-                className="btn btn-primary"
-                disabled={this.state.previousPage === -1}
-                onClick={() => this.onPreviousPage(this.state.previousPage)}
-              >Previous</button>
-            </div>
-            <div className="col">
-              <button
-                className="btn btn-primary"
-                disabled={this.state.nextPage === -1}
-                onClick={() => this.onNextPage(this.state.nextPage)}
-              >Next</button>
-            </div>
-          </div>
+          {
+            !this.state.fetchPersonsFailed &&
+            <NavigationButtons
+              nextPage={this.state.nextPage}
+              previousPage={this.state.previousPage}
+              onNextPage={this.onNextPage}
+              onPreviousPage={this.onPreviousPage}
+            />
+          }
         </div>
       </div>
     );
