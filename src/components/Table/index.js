@@ -32,13 +32,21 @@ const Table = ({ personsLoading, persons, fetchPersonsFailed }) => (
                         <th scope="col">Native Country</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {!personsLoading && persons.map(person => (<TableData person={person} key={person._id["$oid"]} />))}
-                </tbody>
+                {
+                    persons.length !== 0 &&
+                    <tbody>
+                        {!personsLoading && persons.map(person => (<TableData person={person} key={person._id["$oid"]} />))}
+                    </tbody>
+                }
             </table>
         }
-        { personsLoading && !fetchPersonsFailed && <h4 className="loading">Loading...</h4> }
-        { fetchPersonsFailed && <h3 className="error">Fetching Persons Data Failed, Please refresh and try again</h3> }
+        {
+            persons.length === 0 &&
+            !personsLoading &&
+            <h4>No results found!</h4>
+        }
+        {personsLoading && !fetchPersonsFailed && <h4 className="loading">Loading...</h4>}
+        {fetchPersonsFailed && <h3 className="error">Fetching Persons Data Failed, Please refresh and try again</h3>}
     </div>
 )
 

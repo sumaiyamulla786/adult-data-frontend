@@ -19,7 +19,7 @@ const NavigationButtons = ({ previousPage, nextPage, onPreviousPage, onNextPage,
         </div>
         <div className="col text-center">
             <h4>
-                {totalPages === -1 ? '' : (nextPage === -1 ? totalPages : nextPage - 1)} / {totalPages}
+                {totalPages === -1 ? '' : `${(nextPage === -1 ? totalPages : nextPage - 1)}/${totalPages}`}
             </h4>
         </div>
         <div className="col">

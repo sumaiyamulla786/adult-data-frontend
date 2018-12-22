@@ -55,7 +55,7 @@ class App extends Component {
    */
   handleErrorResponse = response => {
     if (response.status !== 200) {
-      throw "server error"
+      throw new Error()
     } else {
       return response.json()
     }
@@ -275,7 +275,7 @@ class App extends Component {
           {
             !this.state.fetchPersonsFailed &&
             !this.state.personsLoading &&
-            this.state.persons.length &&
+            this.state.persons.length !== 0 &&
             <NavigationButtons
               nextPage={this.state.nextPage}
               previousPage={this.state.previousPage}
