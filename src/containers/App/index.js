@@ -97,7 +97,10 @@ class App extends Component {
           }
         }
       })
-      .catch(() => { })
+      .catch(() => { 
+        sessionStorage.removeItem(STORAGE_KEYS.NEXT_PAGE)
+        sessionStorage.removeItem(STORAGE_KEYS.PREVIOUS_PAGE)
+      })
   }
 
   /**
@@ -212,7 +215,7 @@ class App extends Component {
     this.setState({ genderData, relationData })
   }
 
-  /**
+  /** 1.
    * fetching the intial data from api for populating the bar graph and pie chart , as well as to populate the persons table, as well as cache the next page using cachePage function
    */
   componentDidMount() {
